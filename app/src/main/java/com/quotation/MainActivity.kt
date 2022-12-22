@@ -1,7 +1,7 @@
 package com.quotation
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.example.quotation.R
 
 class MainActivity : AppCompatActivity() {

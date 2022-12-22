@@ -1,7 +1,7 @@
 package com.quotation.data.remote
 
-import com.quotation.data.entity.CoinRequest
 import com.quotation.data.entity.BaseCoinResponse
+import com.quotation.data.entity.CoinRequest
 import com.tinder.scarlet.WebSocket
 import com.tinder.scarlet.ws.Receive
 import com.tinder.scarlet.ws.Send

@@ -1,6 +1,6 @@
 package com.quotation.data.entity
 
-import com.squareup.moshi.*
+import com.squareup.moshi.Json
 
 data class BaseCoinResponse(
     @Json(name = "m")

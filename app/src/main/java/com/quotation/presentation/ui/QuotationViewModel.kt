@@ -14,7 +14,7 @@ import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 class QuotationViewModel(
-    private val observerCoinUseCase: ObserveGetInstrumentUseCase,
+    private val observerGetInstrumentUseCase: ObserveGetInstrumentUseCase,
     private val observerSubscribeLevel1UseCase: ObserverSubscribeLevel1UseCase
 ) : ViewModel() {
 
@@ -27,7 +27,7 @@ class QuotationViewModel(
 
     fun startCoinsList(lifecycleOwner: LifecycleOwner, onUpdate: () -> Unit) {
         compositeDisposable.add(
-            observerCoinUseCase.invoke()
+            observerGetInstrumentUseCase.invoke()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ getList ->
                     if (coinBindableItems.isEmpty()) {

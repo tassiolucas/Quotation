@@ -26,5 +26,4 @@ class App : Application() {
             modules(listOf(appModule))
         }
     }
-
 }

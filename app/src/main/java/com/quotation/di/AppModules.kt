@@ -5,8 +5,8 @@ import com.google.gson.Gson
 import com.quotation.data.remote.FoxbitApi
 import com.quotation.data.remote.FoxbitClient
 import com.quotation.data.remote.FoxbitClientImpl
-import com.quotation.data.repository.QuotationRepositoryImpl
 import com.quotation.data.repository.QuotationRepository
+import com.quotation.data.repository.QuotationRepositoryImpl
 import com.quotation.domain.usecase.ObserveGetInstrumentUseCase
 import com.quotation.domain.usecase.ObserverSubscribeLevel1UseCase
 import com.quotation.presentation.ui.QuotationViewModel
@@ -30,11 +30,14 @@ val appModule = module {
 
     single { createScarlet(okHttpClient = get(), lifecycle = get()) }
 
+    single { Gson() }
+
     single<FoxbitClient> { FoxbitClientImpl(foxbitApi = get()) }
 
     single<QuotationRepository> {
         QuotationRepositoryImpl(
-            foxbitClient = get()
+            foxbitClient = get(),
+            gson = get()
         )
     }
 
@@ -48,7 +51,7 @@ val appModule = module {
 
     viewModel {
         QuotationViewModel(
-            observerCoinUseCase = get(),
+            observerGetInstrumentUseCase = get(),
             observerSubscribeLevel1UseCase = get()
         )
     }
@@ -67,11 +70,9 @@ private fun createAndroidLifecycle(application: Application): Lifecycle {
     return AndroidLifecycle.ofApplicationForeground(application)
 }
 
-val jsonMoshi = Moshi.Builder()
+private val jsonMoshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
     .build()
-
-val gson = Gson()
 
 private fun createScarlet(okHttpClient: OkHttpClient, lifecycle: Lifecycle): FoxbitApi {
 

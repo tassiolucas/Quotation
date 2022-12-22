@@ -1,12 +1,11 @@
 package com.quotation.data.repository
 
+import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quotation.data.entity.GetInstrumentIdResponse
 import com.quotation.data.entity.SubscribeLevel1Response
 import com.quotation.data.entity.toCoinRequest
 import com.quotation.data.remote.FoxbitClient
-import com.quotation.di.gson
-import com.quotation.di.jsonMoshi
 import com.quotation.domain.entities.Coin
 import com.quotation.domain.model.CoinModel
 import com.quotation.domain.model.toCoinModel
@@ -14,13 +13,14 @@ import com.quotation.domain.model.toSubscribeLevel1Model
 import io.reactivex.Flowable
 
 class QuotationRepositoryImpl(
-    private val foxbitClient: FoxbitClient
+    private val foxbitClient: FoxbitClient,
+    private val gson: Gson
 ) : QuotationRepository {
 
     override fun getCoins(coin: Coin): Flowable<List<CoinModel>> =
         foxbitClient.getInstrumentId(coin.toCoinRequest())
             .map { response ->
-                val type = object : TypeToken<List<GetInstrumentIdResponse>>(){}.type
+                val type = object : TypeToken<List<GetInstrumentIdResponse>>() {}.type
 
                 gson.fromJson<List<GetInstrumentIdResponse>>(response.o, type)?.map {
                     it.toCoinModel()

@@ -3,7 +3,6 @@ package com.quotation.presentation.ui.base
 import android.view.View
 import androidx.viewbinding.ViewBinding
 import com.xwray.groupie.Item
-import java.lang.RuntimeException
 
 abstract class BaseBindableItem<T : ViewBinding> : Item<BaseViewHolder<T>>() {
 

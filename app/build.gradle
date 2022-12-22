@@ -83,9 +83,7 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     testImplementation "androidx.test:core:$androidxTestVersion"
     testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "org.mockito:mockito-inline:$mockitoVersion"
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
+    testImplementation "io.mockk:mockk:$mockkVersion"
 
     androidTestImplementation "androidx.test:rules:$androidxTestVersion"
     androidTestImplementation "androidx.test:runner:$androidxTestVersion"

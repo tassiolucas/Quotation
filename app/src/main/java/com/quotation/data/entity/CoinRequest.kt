@@ -8,7 +8,7 @@ data class CoinRequest(
     override val i: Int,
     override val n: String,
     override val o: String
-): BaseCoinRequest(m, i, n, o)
+) : BaseCoinRequest(m, i, n, o)
 
 fun Coin.toCoinRequest() = CoinRequest(
     m, i, n, o

@@ -1,8 +1,8 @@
 package com.quotation.data.remote
 
 import android.annotation.SuppressLint
-import com.quotation.data.entity.CoinRequest
 import com.quotation.data.entity.BaseCoinResponse
+import com.quotation.data.entity.CoinRequest
 import com.quotation.domain.entities.BaseSubscribe.Companion.GET_INSTRUMENTS
 import com.quotation.domain.entities.BaseSubscribe.Companion.SUBSCRIBE_LEVEL_1
 import com.tinder.scarlet.WebSocket
@@ -36,7 +36,7 @@ class FoxbitClientImpl(private val foxbitApi: FoxbitApi) : FoxbitClient {
             .filter {
                 it is WebSocket.Event.OnConnectionOpened<*>
             }
-            .subscribe ({
+            .subscribe({
                 foxbitApi.subscribeLevel1(subscribeLevel1Request)
             }, { e ->
                 Timber.e(e)

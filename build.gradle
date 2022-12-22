@@ -41,4 +41,5 @@ ext {
     mockitoKotlinVersion = '2.2.0'
     testJunitVersion = '1.1.2'
     espressoVersion = '3.3.0'
+    mockkVersion = '1.13.3'
 }
