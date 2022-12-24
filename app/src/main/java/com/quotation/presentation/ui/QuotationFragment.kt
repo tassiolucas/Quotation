@@ -38,14 +38,14 @@ class QuotationFragment : Fragment() {
             adapter = coinsListAdapter
         }
 
-        viewModel.startCoinsList(viewLifecycleOwner) {
-            coinsListAdapter.update(viewModel.coinBindableItems)
-        }
+        viewModel.startCoinsList(viewLifecycleOwner)
 
         viewModel.coinList.observe(viewLifecycleOwner) {
-            viewModel.loadCoinsList(it) {
-                coinsListAdapter.update(viewModel.coinBindableItems)
-            }
+            viewModel.loadCoinsList(it)
+        }
+
+        viewModel.updateEvent.observe(viewLifecycleOwner) {
+            coinsListAdapter.update(viewModel.coinBindableItems)
         }
     }
 

@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.example.quotation.R
+import com.google.gson.Gson
+import com.quotation.data.entity.Coin
+import com.quotation.data.entity.TickerList
 import java.text.NumberFormat
 import java.util.*
 
@@ -15,11 +18,11 @@ enum class InstrumentId(val id: Int, @DrawableRes val imgRes: Int, val coinName:
     LTC(2, R.drawable.ltc, "Litecoin");
 
     companion object {
-        fun getPosition(id: Int) = values().find { it.id == id }?.ordinal ?: 1
+        fun getPosition(id: Number?) = values().find { it.id == id }?.ordinal ?: 1
 
-        fun getImageRes(id: Int) = values().find { it.id == id }?.imgRes
+        fun getImageRes(id: Number?) = values().find { it.id == id }?.imgRes
 
-        fun getCoinName(id: Int) = values().find { it.id == id }?.coinName ?: ""
+        fun getCoinName(id: Number?) = values().find { it.id == id }?.coinName ?: ""
     }
 }
 
@@ -33,3 +36,7 @@ fun Number.formatVariation(): String = if (this.toFloat() > 0.0) "+${this}" else
 fun Number.formatVariationColor(context: Context): Int =
     if (this.toFloat() > 0.0) ContextCompat.getColor(context, R.color.positive)
     else ContextCompat.getColor(context, R.color.negative)
+
+fun Coin.toJson() = Gson().toJson(Coin(instrumentId = this.instrumentId))
+
+fun TickerList.getCoins(): List<Coin> = this.o

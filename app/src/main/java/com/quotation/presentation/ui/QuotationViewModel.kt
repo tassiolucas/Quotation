@@ -5,87 +5,131 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.quotation.data.InstrumentId
-import com.quotation.domain.model.CoinModel
-import com.quotation.domain.usecase.ObserveGetInstrumentUseCase
-import com.quotation.domain.usecase.ObserverSubscribeLevel1UseCase
-import io.reactivex.android.schedulers.AndroidSchedulers
+import com.quotation.data.InstrumentId.*
+import com.quotation.data.entity.Coin
+import com.quotation.data.getCoins
+import com.quotation.data.toJson
+import com.quotation.domain.entities.BaseSubscribe
+import com.quotation.domain.usecase.ObserveTickerListUseCase
+import com.quotation.domain.usecase.ObserveTickerUseCase
+import com.quotation.domain.usecase.SendSubscribeUseCase
+import com.quotation.domain.usecase.WebSocketUseCase
+import com.quotation.domain.usecase.base.UseCase.None
+import com.quotation.ext.Executors
+import com.quotation.ext.applySchedulers
+import com.quotation.ext.w
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.rxkotlin.addTo
 import timber.log.Timber
+import java.util.*
+import kotlin.concurrent.schedule
 
 class QuotationViewModel(
-    private val observerGetInstrumentUseCase: ObserveGetInstrumentUseCase,
-    private val observerSubscribeLevel1UseCase: ObserverSubscribeLevel1UseCase
+    private val webSocketUseCase: WebSocketUseCase,
+    private val observeTickerUseCase: ObserveTickerUseCase,
+    private val observeTickerListUseCase: ObserveTickerListUseCase,
+    private val sendSubscribeUseCase: SendSubscribeUseCase,
+    private val executors: Executors
 ) : ViewModel() {
 
-    private val compositeDisposable = CompositeDisposable()
+    private val disposables = CompositeDisposable()
 
-    private val _coinList = MutableLiveData<List<CoinModel>>()
-    val coinList: LiveData<List<CoinModel>> = _coinList
+    private val _coinList = MutableLiveData<List<Coin>>()
+    val coinList: LiveData<List<Coin>> = _coinList
+
+    private val _updateEvent = MutableLiveData<Unit>()
+    val updateEvent get(): LiveData<Unit> = _updateEvent
 
     val coinBindableItems = mutableListOf<CoinBindableItem>()
 
-    fun startCoinsList(lifecycleOwner: LifecycleOwner, onUpdate: () -> Unit) {
-        compositeDisposable.add(
-            observerGetInstrumentUseCase.invoke()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ getList ->
-                    if (coinBindableItems.isEmpty()) {
-                        getList.map { coin ->
-                            val item = CoinBindableItem(
-                                owner = lifecycleOwner,
-                                config = CoinBindableItem.Config(
-                                    index = InstrumentId.getPosition(coin.InstrumentId),
-                                    imageRes = InstrumentId.getImageRes(coin.InstrumentId),
-                                    nameTitle = InstrumentId.getCoinName(coin.InstrumentId),
-                                    symbolTitle = coin.Symbol
-                                )
-                            )
+    private var start = false
+    private val timer = Timer()
 
-                            coinBindableItems.add(item)
-                            coinBindableItems.sortBy { it.index }
-                        }
-                        onUpdate.invoke()
-                        _coinList.value = getList
+    fun startCoinsList(lifecycleOwner: LifecycleOwner) {
+
+        webSocketUseCase.execute(None()).applySchedulers(executors)
+            .subscribe({
+                if (!start) {
+                    Timber.tag("CoinLog").w("Ticker")
+                    sendSubscribeUseCase.execute(GET_COINS_PARAMS)
+                    start = true
+                    timer.schedule(TICKER_TIME) {
+                        start = false
                     }
-                }, { e ->
-                    Timber.e("observerCoinUseCase error: %s", e.toString())
-                })
-        )
+                }
+            },
+                { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
+
+        observeTickerListUseCase.execute(None()).applySchedulers(executors).subscribe({ ticker ->
+            if (ticker.o[0].instrumentId != null) {
+                setupCoinList(lifecycleOwner, ticker.getCoins())
+            }
+        }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
     }
 
-    fun loadCoinsList(coinList: List<CoinModel>, onUpdate: () -> Unit) {
-        coinList.map { coin ->
-            compositeDisposable.add(
-                observerSubscribeLevel1UseCase.invoke(coin.InstrumentId)
-                    .subscribeOn(Schedulers.computation())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ coinData ->
-                        val model = coinList.find {
-                            it.InstrumentId == coinData.InstrumentId
-                        }?.copy(
-                            LastTradedPx = coinData.LastTradedPx,
-                            Rolling24HrVolume = coinData.Rolling24HrVolume,
-                            Rolling24HrPxChange = coinData.Rolling24HrPxChange
-                        )
+    private fun setupCoinList(
+        lifecycleOwner: LifecycleOwner, coinList: List<Coin>
+    ) {
+        if (coinBindableItems.isEmpty()) {
+            val items = coinList.filter {
+                it.instrumentId == BTC.id ||
+                it.instrumentId == XRP.id ||
+                it.instrumentId == TUSD.id ||
+                it.instrumentId == ETH.id ||
+                it.instrumentId == LTC.id
+            }.map { coin ->
+                val item = CoinBindableItem(
+                    owner = lifecycleOwner, config = CoinBindableItem.Config(
+                        index = InstrumentId.getPosition(coin.instrumentId),
+                        imageRes = InstrumentId.getImageRes(coin.instrumentId),
+                        nameTitle = InstrumentId.getCoinName(coin.instrumentId),
+                        symbolTitle = coin.symbol
+                    )
+                )
 
-                        model?.let {
-                            updateCoinsMap(model, onUpdate)
-                        }
-                    }, { e ->
-                        Timber.e("observerSubscribeLevel1UseCase error: %s", e.toString())
-                    })
+                coinBindableItems.add(item)
+                coin
+            }
+
+            _coinList.postValue(items)
+            coinBindableItems.sortBy { it.index }
+        }
+
+        _updateEvent.postValue(Unit)
+    }
+
+    fun loadCoinsList(coinList: List<Coin>) {
+        coinList.map { coin ->
+            sendSubscribeUseCase.execute(
+                SendSubscribeUseCase.SubscribeParams(
+                    n = BaseSubscribe.SUBSCRIBE_LEVEL_1,
+                    o = coin.toJson()
+                )
             )
         }
+
+        observeTickerUseCase.execute(None()).applySchedulers(executors).subscribe({ ticker ->
+            updateCoinsMap(ticker.o)
+            Timber.tag("CoinLog").w("Coin: ${ticker.o.instrumentId}")
+        }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
     }
 
-    private fun updateCoinsMap(coin: CoinModel, onUpdate: () -> Unit) {
-        coinBindableItems[InstrumentId.getPosition(coin.InstrumentId)].currencyTitleValue.value =
-            coin.LastTradedPx
-        coinBindableItems[InstrumentId.getPosition(coin.InstrumentId)].variationTitleValue.value =
-            coin.Rolling24HrPxChange
+    private fun updateCoinsMap(coin: Coin) {
+        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)].currencyTitleValue.postValue(
+            coin.lastTradedPx
+        )
+        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)].variationTitleValue.postValue(
+            coin.rolling24HrPxChange
+        )
 
-        onUpdate.invoke()
+        _updateEvent.postValue(Unit)
     }
 
+    companion object {
+        private val GET_COINS_PARAMS = SendSubscribeUseCase.SubscribeParams(
+            n = BaseSubscribe.GET_INSTRUMENTS,
+            o = Coin().toJson()
+        )
+        private const val TICKER_TIME = 3000L
+    }
 }

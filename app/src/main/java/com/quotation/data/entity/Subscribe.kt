@@ -1,8 +1,10 @@
 package com.quotation.data.entity
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
-abstract class BaseCoinRequest(
+@JsonClass(generateAdapter = true)
+class Subscribe(
     @Json(name = "m")
     open val m: Int,
     @Json(name = "i")

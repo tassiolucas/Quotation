@@ -24,10 +24,7 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
 
     override fun bind(viewBinding: ItemCoinBinding, position: Int) {
         with(viewBinding) {
-            tvValueTitle.visibility = INVISIBLE
-            tvCoinVariation.visibility = INVISIBLE
-            pgValueTitle.visibility = VISIBLE
-            pgCoinVariation.visibility = VISIBLE
+            toggleLoading(viewBinding, true)
 
             config.imageRes?.let {
                 civCoinImage.setImageResource(it)
@@ -38,15 +35,35 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
             tvCoinSymbol.text = config.symbolTitle
 
             currencyTitleValue.observe(owner) {
+                toggleLoading(this, true)
                 tvValueTitle.text = it?.toBRLCurrency()
-                tvValueTitle.visibility = VISIBLE
-                pgValueTitle.visibility = INVISIBLE
+                android.os.Handler().postDelayed({
+                    toggleLoading(viewBinding, false)
+                }, 500)
             }
 
             variationTitleValue.observe(owner) {
+                toggleLoading(this, true)
                 tvCoinVariation.setTextColor(it.formatVariationColor(root.context))
                 tvCoinVariation.text = it.formatVariation()
+                android.os.Handler().postDelayed({
+                    toggleLoading(viewBinding, false)
+                }, 500)
+            }
+        }
+    }
+
+    private fun toggleLoading(viewBinding: ItemCoinBinding, isLoading: Boolean) {
+        with(viewBinding) {
+            if (isLoading) {
+                tvValueTitle.visibility = INVISIBLE
+                tvCoinVariation.visibility = INVISIBLE
+                pgValueTitle.visibility = VISIBLE
+                pgCoinVariation.visibility = VISIBLE
+            } else {
+                tvValueTitle.visibility = VISIBLE
                 tvCoinVariation.visibility = VISIBLE
+                pgValueTitle.visibility = INVISIBLE
                 pgCoinVariation.visibility = INVISIBLE
             }
         }
@@ -58,6 +75,6 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
         @DrawableRes val imageRes: Int? = null,
         val index: Int,
         val nameTitle: String,
-        val symbolTitle: String,
+        val symbolTitle: String?,
     )
 }
