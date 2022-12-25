@@ -7,6 +7,7 @@ import com.example.quotation.R
 import com.google.gson.Gson
 import com.quotation.data.entity.Coin
 import com.quotation.data.entity.TickerList
+import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
 
@@ -31,12 +32,16 @@ fun Number.toBRLCurrency(): String {
     return NumberFormat.getCurrencyInstance(locale).format(this)
 }
 
-fun Number.formatVariation(): String = if (this.toFloat() > 0.0) "+${this}" else "$this"
+fun Number.formatVariation(): String {
+    val formatter = DecimalFormat("0.00")
+    val roundedNumber = formatter.format(this).toString()
+    return if (this.toFloat() > 0.0) "+$roundedNumber%" else "$roundedNumber%"
+}
 
 fun Number.formatVariationColor(context: Context): Int =
     if (this.toFloat() > 0.0) ContextCompat.getColor(context, R.color.positive)
     else ContextCompat.getColor(context, R.color.negative)
 
-fun Coin.toJson() = Gson().toJson(Coin(instrumentId = this.instrumentId))
+fun Coin.toJson(): String = Gson().toJson(Coin(instrumentId = this.instrumentId))
 
 fun TickerList.getCoins(): List<Coin> = this.o

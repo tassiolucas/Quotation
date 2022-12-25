@@ -84,6 +84,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.9.0.pr2'
 
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "junit:junit:$junitVersion"
     testImplementation "androidx.test:core:$androidxTestVersion"
     testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"

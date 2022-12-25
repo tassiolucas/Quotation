@@ -6,11 +6,11 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 class Subscribe(
     @Json(name = "m")
-    open val m: Int,
+    val m: Int,
     @Json(name = "i")
-    open val i: Int,
+    val i: Int,
     @Json(name = "n")
-    open val n: String,
+    val n: String,
     @Json(name = "o")
-    open val o: String
+    val o: String
 )

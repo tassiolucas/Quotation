@@ -1,12 +1,12 @@
 package com.quotation.presentation.ui
 
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.quotation.data.InstrumentId
 import com.quotation.data.InstrumentId.*
 import com.quotation.data.entity.Coin
+import com.quotation.data.entity.TickerList
 import com.quotation.data.getCoins
 import com.quotation.data.toJson
 import com.quotation.domain.entities.BaseSubscribe
@@ -18,11 +18,10 @@ import com.quotation.domain.usecase.base.UseCase.None
 import com.quotation.ext.Executors
 import com.quotation.ext.applySchedulers
 import com.quotation.ext.w
+import com.tinder.scarlet.WebSocket
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import timber.log.Timber
-import java.util.*
-import kotlin.concurrent.schedule
 
 class QuotationViewModel(
     private val webSocketUseCase: WebSocketUseCase,
@@ -35,51 +34,56 @@ class QuotationViewModel(
     private val disposables = CompositeDisposable()
 
     private val _coinList = MutableLiveData<List<Coin>>()
-    val coinList: LiveData<List<Coin>> = _coinList
+    val coinList get(): LiveData<List<Coin>> = _coinList
 
-    private val _updateEvent = MutableLiveData<Unit>()
-    val updateEvent get(): LiveData<Unit> = _updateEvent
+    private val _onUpdateEvent = MutableLiveData<Unit>()
+    val updateEvent get(): LiveData<Unit> = _onUpdateEvent
+
+    private val _onConnectionFailedEvent = MutableLiveData<String>()
+    val onConnectionFailedEvent get(): LiveData<String> = _onConnectionFailedEvent
 
     val coinBindableItems = mutableListOf<CoinBindableItem>()
 
-    private var start = false
-    private val timer = Timer()
-
-    fun startCoinsList(lifecycleOwner: LifecycleOwner) {
-
+    fun startCoinsList() {
         webSocketUseCase.execute(None()).applySchedulers(executors)
-            .subscribe({
-                if (!start) {
-                    Timber.tag("CoinLog").w("Ticker")
-                    sendSubscribeUseCase.execute(GET_COINS_PARAMS)
-                    start = true
-                    timer.schedule(TICKER_TIME) {
-                        start = false
-                    }
-                }
-            },
+            .ofType(WebSocket.Event.OnConnectionFailed::class.java).subscribe(
+                {
+                    Timber.w(OnConnectionFailed)
+                    _onConnectionFailedEvent.postValue(
+                        it.throwable.localizedMessage?.toString() ?: UnknownError
+                    )
+                },
                 { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
 
-        observeTickerListUseCase.execute(None()).applySchedulers(executors).subscribe({ ticker ->
-            if (ticker.o[0].instrumentId != null) {
-                setupCoinList(lifecycleOwner, ticker.getCoins())
-            }
-        }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
+        webSocketUseCase.execute(None()).applySchedulers(executors)
+            .ofType(WebSocket.Event.OnConnectionOpened::class.java)
+            .subscribe({
+                Timber.w(OnConnectionOpened)
+                sendSubscribeUseCase.execute(GET_COINS_PARAMS)
+            }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
+
+        observeTickerListUseCase.execute(None()).applySchedulers(executors)
+            .ofType(TickerList::class.java)
+            .subscribe({ ticker ->
+                if (ticker.o[0].instrumentId != null) {
+                    setupCoinList(ticker.getCoins())
+                }
+            }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
     }
 
     private fun setupCoinList(
-        lifecycleOwner: LifecycleOwner, coinList: List<Coin>
+        coinList: List<Coin>
     ) {
         if (coinBindableItems.isEmpty()) {
             val items = coinList.filter {
                 it.instrumentId == BTC.id ||
-                it.instrumentId == XRP.id ||
-                it.instrumentId == TUSD.id ||
-                it.instrumentId == ETH.id ||
-                it.instrumentId == LTC.id
+                        it.instrumentId == XRP.id ||
+                        it.instrumentId == TUSD.id ||
+                        it.instrumentId == ETH.id ||
+                        it.instrumentId == LTC.id
             }.map { coin ->
                 val item = CoinBindableItem(
-                    owner = lifecycleOwner, config = CoinBindableItem.Config(
+                    config = CoinBindableItem.Config(
                         index = InstrumentId.getPosition(coin.instrumentId),
                         imageRes = InstrumentId.getImageRes(coin.instrumentId),
                         nameTitle = InstrumentId.getCoinName(coin.instrumentId),
@@ -90,12 +94,10 @@ class QuotationViewModel(
                 coinBindableItems.add(item)
                 coin
             }
-
             _coinList.postValue(items)
             coinBindableItems.sortBy { it.index }
         }
-
-        _updateEvent.postValue(Unit)
+        _onUpdateEvent.postValue(Unit)
     }
 
     fun loadCoinsList(coinList: List<Coin>) {
@@ -110,19 +112,21 @@ class QuotationViewModel(
 
         observeTickerUseCase.execute(None()).applySchedulers(executors).subscribe({ ticker ->
             updateCoinsMap(ticker.o)
-            Timber.tag("CoinLog").w("Coin: ${ticker.o.instrumentId}")
         }, { w { it.localizedMessage?.toString().toString() } }).addTo(disposables)
     }
 
     private fun updateCoinsMap(coin: Coin) {
-        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)].currencyTitleValue.postValue(
-            coin.lastTradedPx
-        )
-        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)].variationTitleValue.postValue(
-            coin.rolling24HrPxChange
-        )
+        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)]
+            .currencyTitleValue.postValue(coin.lastTradedPx)
+        coinBindableItems[InstrumentId.getPosition(coin.instrumentId)]
+            .variationTitleValue.postValue(coin.rolling24HrPxChange)
 
-        _updateEvent.postValue(Unit)
+        _onUpdateEvent.postValue(Unit)
+    }
+
+    override fun onCleared() {
+        disposables.clear()
+        super.onCleared()
     }
 
     companion object {
@@ -130,6 +134,8 @@ class QuotationViewModel(
             n = BaseSubscribe.GET_INSTRUMENTS,
             o = Coin().toJson()
         )
-        private const val TICKER_TIME = 3000L
+        private const val OnConnectionFailed = "WebSocket.Event.OnConnectionFailed"
+        private const val OnConnectionOpened = "WebSocket.Event.OnConnectionOpened"
+        private const val UnknownError = "Unknown error"
     }
 }

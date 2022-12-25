@@ -1,52 +1,68 @@
 package com.quotation
 
-import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.quotation.data.entity.BaseCoinResponse
-import com.quotation.data.entity.GetInstrumentIdResponse
-import com.quotation.data.entity.SubscribeLevel1Response
+import com.quotation.data.entity.Coin
+import com.quotation.data.entity.Subscribe
+import com.quotation.data.entity.Ticker
+import com.quotation.data.entity.TickerList
+import com.quotation.data.toJson
 import com.quotation.domain.entities.BaseSubscribe
-import com.quotation.domain.entities.Coin
-import com.quotation.domain.model.CoinModel
+import com.quotation.domain.usecase.SendSubscribeUseCase
 import com.quotation.presentation.ui.CoinBindableItem
 import java.lang.reflect.Type
 
-val dummyInstrumentResponse = GetInstrumentIdResponse(1, "BTC", 0)
-
-val dummySubscribeResponse = SubscribeLevel1Response(1, 0.0, 0.0, 0.0)
-
-val dummyInstrumentJson: String = Gson().toJson(dummyInstrumentResponse)
-
-val dummySubscribeJson: String = Gson().toJson(dummySubscribeResponse)
-
-val dummyType: Type = object : TypeToken<List<GetInstrumentIdResponse>>() {}.type
+val dummyType: Type = object : TypeToken<List<Coin>>() {}.type
 
 val dummyCoin = Coin(
+    instrumentId = 1,
+    symbol = "BTC",
+    sortIndex = 1,
+    lastTradedPx = 1.0,
+    rolling24HrVolume = 1.0,
+    rolling24HrPxChange = 1.0,
+)
+
+val dummyTicker = Ticker(
     m = BaseSubscribe.M,
     i = BaseSubscribe.I,
     n = BaseSubscribe.GET_INSTRUMENTS,
-    o = "{}"
+    o = Coin()
 )
 
-val dummyInstrumentBaseCoinResponse = BaseCoinResponse(
+val dummyTickerList = TickerList(
     m = BaseSubscribe.M,
     i = BaseSubscribe.I,
     n = BaseSubscribe.GET_INSTRUMENTS,
-    o = dummyInstrumentJson
+    o = listOf(dummyCoin)
 )
 
-val dummyInstrumentModel = CoinModel(
-    InstrumentId = 1,
-    Symbol = "BTC",
-    SortIndex = 0
+val dummyCoinBindableItem = CoinBindableItem(
+    config = CoinBindableItem.Config(
+        imageRes = -1,
+        index = 1,
+        nameTitle = "dummyNameTitle",
+        symbolTitle = "dummySymbolTitle",
+    )
 )
 
-val dummySubscribeModel = CoinModel(
-    InstrumentId = 1,
-    Symbol = "",
-    SortIndex = null,
-    LastTradedPx = 0.0,
-    Rolling24HrVolume = 0.0,
-    Rolling24HrPxChange = 0.0
+val dummySubscribe = Subscribe(
+    m = BaseSubscribe.M,
+    i = BaseSubscribe.I,
+    n = BaseSubscribe.GET_INSTRUMENTS,
+    o = Coin().toJson()
+)
+
+val dummyGetInstrumentsParams = SendSubscribeUseCase.SubscribeParams(
+    m = BaseSubscribe.M,
+    i = BaseSubscribe.I,
+    n = BaseSubscribe.GET_INSTRUMENTS,
+    o = Coin().toJson()
+)
+
+val dummySubscribeLevel1Params = SendSubscribeUseCase.SubscribeParams(
+    n = BaseSubscribe.SUBSCRIBE_LEVEL_1,
+    o = Coin(
+        instrumentId = 1
+    ).toJson()
 )
 

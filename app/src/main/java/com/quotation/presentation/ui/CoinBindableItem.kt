@@ -12,10 +12,12 @@ import com.quotation.data.formatVariation
 import com.quotation.data.formatVariationColor
 import com.quotation.data.toBRLCurrency
 import com.quotation.presentation.ui.base.BaseBindableItem
+import com.quotation.presentation.ui.base.BaseViewHolder
 
-class CoinBindableItem(private val owner: LifecycleOwner, private val config: Config) :
+class CoinBindableItem(private val config: Config) :
     BaseBindableItem<ItemCoinBinding>() {
 
+    private lateinit var owner: LifecycleOwner
     val index = config.index
     val currencyTitleValue = MutableLiveData<Number>()
     val variationTitleValue = MutableLiveData<Number>()
@@ -24,6 +26,8 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
 
     override fun bind(viewBinding: ItemCoinBinding, position: Int) {
         with(viewBinding) {
+            owner = viewBinding.root.context as LifecycleOwner
+
             toggleLoading(viewBinding, true)
 
             config.imageRes?.let {
@@ -35,20 +39,14 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
             tvCoinSymbol.text = config.symbolTitle
 
             currencyTitleValue.observe(owner) {
-                toggleLoading(this, true)
                 tvValueTitle.text = it?.toBRLCurrency()
-                android.os.Handler().postDelayed({
-                    toggleLoading(viewBinding, false)
-                }, 500)
+                toggleLoading(this, false)
             }
 
             variationTitleValue.observe(owner) {
-                toggleLoading(this, true)
                 tvCoinVariation.setTextColor(it.formatVariationColor(root.context))
                 tvCoinVariation.text = it.formatVariation()
-                android.os.Handler().postDelayed({
-                    toggleLoading(viewBinding, false)
-                }, 500)
+                toggleLoading(this, false)
             }
         }
     }
@@ -67,6 +65,12 @@ class CoinBindableItem(private val owner: LifecycleOwner, private val config: Co
                 pgCoinVariation.visibility = INVISIBLE
             }
         }
+    }
+
+    override fun onViewDetachedFromWindow(viewHolder: BaseViewHolder<ItemCoinBinding>) {
+        currencyTitleValue.removeObservers(owner)
+        variationTitleValue.removeObservers(owner)
+        super.onViewDetachedFromWindow(viewHolder)
     }
 
     override fun getLayout() = R.layout.item_coin

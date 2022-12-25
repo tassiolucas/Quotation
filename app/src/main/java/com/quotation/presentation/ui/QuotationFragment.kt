@@ -5,9 +5,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.quotation.R
 import com.example.quotation.databinding.FragmentQuotationBinding
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
@@ -38,7 +40,7 @@ class QuotationFragment : Fragment() {
             adapter = coinsListAdapter
         }
 
-        viewModel.startCoinsList(viewLifecycleOwner)
+        viewModel.startCoinsList()
 
         viewModel.coinList.observe(viewLifecycleOwner) {
             viewModel.loadCoinsList(it)
@@ -47,6 +49,9 @@ class QuotationFragment : Fragment() {
         viewModel.updateEvent.observe(viewLifecycleOwner) {
             coinsListAdapter.update(viewModel.coinBindableItems)
         }
-    }
 
+        viewModel.onConnectionFailedEvent.observe(viewLifecycleOwner) {
+            Toast.makeText(requireContext(), getString(R.string.connection_failure_message, it), Toast.LENGTH_SHORT).show()
+        }
+    }
 }
