@@ -73,12 +73,12 @@ class QuotationViewModelTest {
             } returns Schedulers.io()
 
             quotationViewModel.coinList.observeForever {
-                assertEquals(ID, it[0].instrumentId)
-                assertEquals(SORT_INDEX, it[0].sortIndex)
-                assertEquals(SYMBOL, it[0].symbol)
-                assertEquals(LAST_TRADE_PX, it[0].lastTradedPx)
-                assertEquals(ROLLING_24HR_VOLUME, it[0].rolling24HrVolume)
-                assertEquals(ROLLING_24HR_PX_CHANGE, it[0].rolling24HrPxChange)
+                assertEquals(dummyCoin.instrumentId, it[0].instrumentId)
+                assertEquals(dummyCoin.sortIndex, it[0].sortIndex)
+                assertEquals(dummyCoin.symbol, it[0].symbol)
+                assertEquals(dummyCoin.lastTradedPx, it[0].lastTradedPx)
+                assertEquals(dummyCoin.rolling24HrVolume, it[0].rolling24HrVolume)
+                assertEquals(dummyCoin.rolling24HrPxChange, it[0].rolling24HrPxChange)
             }
 
             quotationViewModel.updateEvent.observeForever {
@@ -97,7 +97,7 @@ class QuotationViewModelTest {
 
             assertEquals(
                 quotationViewModel.coinBindableItems[0].index,
-                InstrumentId.getPosition(InstrumentId.BTC.id)
+                dummyCoinBindableItem.index
             )
             assertEquals(quotationViewModel.coinBindableItems[0].currencyTitleValue.value, null)
             assertEquals(quotationViewModel.coinBindableItems[0].variationTitleValue.value, null)
@@ -134,11 +134,11 @@ class QuotationViewModelTest {
         quotationViewModel.startCoinsList()
 
         quotationViewModel.coinBindableItems[0].currencyTitleValue.observeForever {
-            assertEquals(LAST_TRADE_PX, it)
+            assertEquals(dummyCoinBindableItem.currencyTitleValue, it)
         }
 
         quotationViewModel.coinBindableItems[0].variationTitleValue.observeForever {
-            assertEquals(ROLLING_24HR_PX_CHANGE, it)
+            assertEquals(dummyCoinBindableItem.variationTitleValue, it)
         }
 
         quotationViewModel.updateEvent.observeForever {
@@ -153,16 +153,7 @@ class QuotationViewModelTest {
 
         assertEquals(
             quotationViewModel.coinBindableItems[0].index,
-            InstrumentId.getPosition(InstrumentId.BTC.id)
+            dummyCoinBindableItem.index
         )
-    }
-
-    companion object {
-        private const val LAST_TRADE_PX = 1.0
-        private const val ROLLING_24HR_VOLUME = 1.0
-        private const val ROLLING_24HR_PX_CHANGE = 1.0
-        private val ID = InstrumentId.getPosition(1)
-        private val SYMBOL = InstrumentId.BTC.coinName
-        private val SORT_INDEX = InstrumentId.BTC.ordinal
     }
 }

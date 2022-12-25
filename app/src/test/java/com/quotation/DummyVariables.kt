@@ -1,6 +1,5 @@
 package com.quotation
 
-import com.google.gson.reflect.TypeToken
 import com.quotation.data.entity.Coin
 import com.quotation.data.entity.Subscribe
 import com.quotation.data.entity.Ticker
@@ -9,9 +8,6 @@ import com.quotation.data.toJson
 import com.quotation.domain.entities.BaseSubscribe
 import com.quotation.domain.usecase.SendSubscribeUseCase
 import com.quotation.presentation.ui.CoinBindableItem
-import java.lang.reflect.Type
-
-val dummyType: Type = object : TypeToken<List<Coin>>() {}.type
 
 val dummyCoin = Coin(
     instrumentId = 1,
@@ -38,10 +34,10 @@ val dummyTickerList = TickerList(
 
 val dummyCoinBindableItem = CoinBindableItem(
     config = CoinBindableItem.Config(
-        imageRes = -1,
-        index = 1,
-        nameTitle = "dummyNameTitle",
-        symbolTitle = "dummySymbolTitle",
+        imageRes = 0,
+        index = 0,
+        nameTitle = "Bitcoin",
+        symbolTitle = "BTC",
     )
 )
 

@@ -5,6 +5,7 @@ import com.quotation.data.entity.Ticker
 import com.quotation.data.entity.TickerList
 import com.quotation.data.remote.DataSource
 import com.quotation.domain.entities.BaseSubscribe
+import com.quotation.dummyCoin
 import com.quotation.dummySubscribe
 import com.quotation.dummyTicker
 import com.quotation.dummyTickerList
@@ -66,7 +67,7 @@ class CoinbaseRepositoryImplTest {
                 m = BaseSubscribe.M,
                 i = BaseSubscribe.I,
                 n = BaseSubscribe.GET_INSTRUMENTS,
-                o = listOf(Coin())
+                o = listOf(dummyCoin)
             )
         )
     }
